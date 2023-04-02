@@ -1,0 +1,47 @@
+version: "3.9"
+
+
+x-logging: &logging
+  driver: "json-file"
+  options:
+    max-size: "100m"
+    max-file: "1"
+
+services:
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    depends_on:
+      - php
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - "./nginx:/etc/nginx/conf.d:ro"
+      - "./www:/var/www"
+    logging: *logging
+    networks:
+      - frontend
+      - backend
+
+  php:
+    build: .
+    container_name: php
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:9000:9000"
+    volumes:
+      - "./www:/var/www"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://nginx | grep works"]
+      interval: 5s
+      timeout: 1s
+      retries: 2
+    logging: *logging
+    networks:
+      - backend
+
+
+networks:
+  frontend:
+  backend:
